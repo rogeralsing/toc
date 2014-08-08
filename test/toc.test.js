@@ -22,13 +22,13 @@ suite('toc', function() {
     });
 
     test('plugin should bind to element', function() {
-      assert.equal($('.toc ul').length, 0);
+      assert.equal($('#toc1 ul').length, 0);
 
       $('.toc').toc({
         container: '#fixture'
       });
 
-      assert.equal($('.toc ul').length, 1);
+      assert.equal($('#toc1 ul').length, 3);
     });
   });
   

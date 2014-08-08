@@ -121,7 +121,7 @@ $.fn.toc = function(options) {
 
       
     });
-    el.append(ul);
+    el.html(ul);
   });
 };
 
