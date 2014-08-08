@@ -1,60 +1,3 @@
-/*!
- * toc - jQuery Table of Contents Plugin
- * v0.3.2
- * http://projects.jga.me/toc/
- * copyright Greg Allen 2014
- * MIT License
-*/
-/*!
- * smooth-scroller - Javascript lib to handle smooth scrolling
- * v0.1.2
- * https://github.com/firstandthird/smooth-scroller
- * copyright First+Third 2014
- * MIT License
-*/
-//smooth-scroller.js
-
-(function($) {
-  $.fn.smoothScroller = function(options) {
-    options = $.extend({}, $.fn.smoothScroller.defaults, options);
-    var el = $(this);
-
-    $(options.scrollEl).animate({
-      scrollTop: el.offset().top - $(options.scrollEl).offset().top - options.offset
-    }, options.speed, options.ease, function() {
-      var hash = el.attr('id');
-
-      if(hash.length) {
-        if(history.pushState) {
-          history.pushState(null, null, '#' + hash);
-        } else {
-          document.location.hash = hash;
-        }
-      }
-
-      el.trigger('smoothScrollerComplete');
-    });
-
-    return this;
-  };
-
-  $.fn.smoothScroller.defaults = {
-    speed: 400,
-    ease: 'swing',
-    scrollEl: 'body,html',
-    offset: 0
-  };
-
-  $('body').on('click', '[data-smoothscroller]', function(e) {
-    e.preventDefault();
-    var href = $(this).attr('href');
-
-    if(href.indexOf('#') === 0) {
-      $(href).smoothScroller();
-    }
-  });
-}(jQuery));
-
 (function($) {
 var verboseIdCache = {};
 $.fn.toc = function(options) {
@@ -107,12 +50,35 @@ $.fn.toc = function(options) {
 
   return this.each(function() {
     //build TOC
-    var el = $(this);
-    var ul = $(opts.listType);
-
+    var root = ul;
+    var parents = [];
+    var prev = 2;
+    parents.push({ level: 1, element: root });
+    var first = true;
     headings.each(function(i, heading) {
+      var parent = parents[parents.length - 1];      
       var $h = $(heading);
+      var self = $(this);
+      var currentLevel = parseInt(self[0].nodeName.substr(1)) * 2
+
+
       headingOffsets.push($h.offset().top - opts.highlightOffset);
+
+      if (!first && currentLevel > parent.level + 1) {
+          var parentElement = $('<ul />').appendTo(parent.element);
+          parent = { level: parent.level + 1, element: parentElement };
+          parents.push(parent);
+      } else {
+          while (parent.level >= currentLevel) {
+              parent = parents.pop();
+          }
+          parents.push(parent);
+      }
+
+      if (first)
+      {
+        first = false;      
+      }
 
       var anchorName = opts.anchorName(i, heading, opts.prefix);
 
@@ -137,9 +103,14 @@ $.fn.toc = function(options) {
         .addClass(opts.itemClass(i, heading, $h, opts.prefix))
         .append(a);
 
-      ul.append(li);
+      parent.element.append(li);
+
+      parent = { level: currentLevel, element: li };
+      parents.push(parent);
+
+      
     });
-    el.html(ul);
+    el.append(ul);
   });
 };
 
@@ -181,7 +152,7 @@ jQuery.fn.toc.defaults = {
     return prefix + '-' + candidateId;
   },
   headerText: function(i, heading, $heading) {
-    return $heading.text();
+    return $heading.data('toc-title') || $heading.text();
   },
   itemClass: function(i, heading, $heading, prefix) {
     return prefix + '-' + $heading[0].tagName.toLowerCase();
